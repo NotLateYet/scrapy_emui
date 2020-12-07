@@ -48,7 +48,7 @@ class IpProducer(BaseProducer):
             self.__loop_dir(ip_str)
 
     def __loop_dir(self, ip_str):
-        dirs = ['IT_VMP_SHA_%03d_F']
+        dirs = ['IT_VMP_SHA_%d_F', 'IT_VMP_WHU_%d_F', 'IT_VMP_SIA_%d_F', 'IT_VMP_PEK_%d_F', 'T_VMP_WHU_%d_F']
         reach = []
         unreach = []
         for dir in dirs:
