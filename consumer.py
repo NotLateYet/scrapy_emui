@@ -11,7 +11,7 @@ class BaseConsumer(object):
 
     def __init__(self):
         self.__name = get_rand_name()
-        self.logger = Logger('consumer_%s.log' % self.__name, level='debug')
+        self.logger = Logger('log/consumer_%s.log' % self.__name, level='debug')
         self.key_unfetch = 'unfetch'
         self.key_fetched = 'fetched'
         self.logger.info('Create a consumer(%s).' % self.__name)

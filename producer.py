@@ -10,7 +10,7 @@ class BaseProducer(object):
 
     def __init__(self):
         self.__name = get_rand_name()
-        self.logger = Logger('producer_%s.log' % self.__name, level='debug')
+        self.logger = Logger('log/producer_%s.log' % self.__name, level='debug')
         self.key_unfetch = 'unfetch'
         self.key_unreach = 'unreach'
         self.logger.info('Create a producer(%s).' % self.__name)

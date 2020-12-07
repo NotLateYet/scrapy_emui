@@ -6,6 +6,7 @@ import time
 import platform
 
 PING_COUNT_PARAM = '-n' if platform.system() == 'Windows' else '-c'
+PING_WAIT_PARAM = '-w' if platform.system() == 'Windwos' else '-W'
 ENCODING_FORMAT = 'UTF-8'
 
 
@@ -26,7 +27,7 @@ def get_rand_name():
 
 
 def ping_ip(ip_str):
-    return subprocess.call(['ping', PING_COUNT_PARAM, '2', ip_str]) == 0
+    return subprocess.call(['ping', PING_COUNT_PARAM, '2', PING_WAIT_PARAM, '100', ip_str]) == 0
 
 
 def next_ip(ip_str):
