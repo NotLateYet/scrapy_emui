@@ -1,15 +1,17 @@
 import json
 import time
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from database import *
 from utils import *
 from logger import *
 
 
-class BaseConsumer(ABC):
+class BaseConsumer(object):
+    __metaclass__ = ABCMeta
+
     def __init__(self):
         self.__name = get_rand_name()
-        self.logger = Logger('consumer.log', level='debug')
+        self.logger = Logger('consumer_%s.log' % self.__name, level='debug')
         self.key_unfetch = 'unfetch'
         self.key_fetched = 'fetched'
         self.logger.info('Create a consumer(%s).' % self.__name)
@@ -24,7 +26,7 @@ class BaseConsumer(ABC):
         pass
 
 
-class IpConsumer(BaseConsumer, ABC):
+class IpConsumer(BaseConsumer):
     def __init__(self):
         super(IpConsumer, self).__init__()
 

@@ -1,14 +1,16 @@
 import json
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from database import *
 from utils import *
 from logger import *
 
 
-class BaseProducer(ABC):
+class BaseProducer(object):
+    __metaclass__ = ABCMeta
+
     def __init__(self):
         self.__name = get_rand_name()
-        self.logger = Logger('producer.log', level='debug')
+        self.logger = Logger('producer_%s.log' % self.__name, level='debug')
         self.key_unfetch = 'unfetch'
         self.key_unreach = 'unreach'
         self.logger.info('Create a producer(%s).' % self.__name)
@@ -23,7 +25,7 @@ class BaseProducer(ABC):
         pass
 
 
-class IpProducer(BaseProducer, ABC):
+class IpProducer(BaseProducer):
     def __init__(self):
         super(IpProducer, self).__init__()
         self.__key_last = 'last_ip'
