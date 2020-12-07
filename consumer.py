@@ -30,18 +30,22 @@ class IpConsumer(BaseConsumer, ABC):
     def __init__(self):
         super(IpConsumer, self).__init__()
 
-    def __parse_path(self, file, modify_time):
-        split_nos = file.split('_')
+    def __parse_item(self, parent_path, file_name):
+        full_path = os.path.join(parent_path, file_name)
+        modify_time = file_create_time(full_path)
+
+        split_nos = file_name.split('_')
         down_no = split_nos[0].replace('BL', '')
         split_brands = split_nos[1].split(' ')
         brand = split_brands[0]
         emui_ver = split_brands[1]
         res = {
-            'key': file,
+            'key': file_name,
             'modify_time': modify_time,
             'down_no': down_no,
             'brand': brand,
-            'emui': emui_ver
+            'emui': emui_ver,
+            'path': parent_path,
         }
         return json.dumps(res)
 
@@ -52,14 +56,12 @@ class IpConsumer(BaseConsumer, ABC):
         ip = values['ip']
         paths = values['paths']
         for path in paths:
-            ip_path = concat_ip_path(ip, path)
-            for file in list_dir(ip, path):
-                if not file.startswith('BL'):
+            parent_path = concat_ip_path(ip, path)
+            for file_name in list_dir(ip, path):
+                if not file_name.startswith('BL'):
                     continue
-                full_path = os.path.join(ip_path, file)
-                modify_time = file_create_time(full_path)
-                parse_dir = self.__parse_path(file, modify_time)
-                DB.redis.rpush(self.key_fetched, parse_dir)
+                item_json = self.__parse_item(parent_path, file_name)
+                DB.redis.rpush(self.key_fetched, item_json)
 
     def do(self):
         while True:
