@@ -52,7 +52,7 @@ class IpConsumer(BaseConsumer):
     def __do_fetch(self, ip_str):
         dirs = ['IT_VMP_SHA_%d_F', 'IT_VMP_WHU_%d_F', 'IT_VMP_SIA_%d_F', 'IT_VMP_PEK_%d_F', 'T_VMP_WHU_%d_F']
         for dir in dirs:
-            for num in range(1000):
+            for num in range(1, 1000):
                 path = dir % num
                 parent_path = concat_ip_path(ip_str, path)
                 dir_lists = list_dir(ip_str, path)

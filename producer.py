@@ -33,7 +33,7 @@ class IpProducer(BaseProducer):
 
     def __loop_ip(self, ip_str):
         ip = str_2_ip(ip_str)
-        for i in range(256):
+        for i in range(1, 256):
             ip[3] = i
             tmp_ip = ip_2_str(ip)
             self.logger.info('Processing ip: %s' % tmp_ip)
