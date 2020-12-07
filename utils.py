@@ -3,6 +3,9 @@ import uuid
 import os
 import subprocess
 import time
+import platform
+
+PING_COUNT_PARAM = '-n' if platform.system() == 'Windows' else '-c'
 
 
 def get_hostname():
@@ -22,7 +25,7 @@ def get_rand_name():
 
 
 def ping_ip(ip):
-    return subprocess.call(['ping', '-c', '2', '.'.join([str(i) for i in ip])]) == 0
+    return subprocess.call(['ping', PING_COUNT_PARAM, '2', '.'.join([str(i) for i in ip])]) == 0
 
 
 def next_ip(ip):

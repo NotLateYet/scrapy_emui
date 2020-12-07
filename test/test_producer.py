@@ -10,5 +10,17 @@ def test_add():
     DB.redis.rpush('unfetch', reach_json)
 
 
+def test_redis():
+    import redis
+    print(redis.__version__)
+
+
+def test_mongo():
+    import pymongo
+    print(pymongo.__version__)
+
+
 if __name__ == '__main__':
-    test_add()
+    # test_add()
+    test_redis()
+    test_mongo()
