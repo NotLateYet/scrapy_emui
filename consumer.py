@@ -49,35 +49,36 @@ class IpConsumer(BaseConsumer):
         }
         return json.dumps(res)
 
-    def __do_fetch(self, values):
-        if 'ip' not in values or 'paths' not in values:
-            self.logger.error('Not found ip or paths in %s' % json.dumps(values))
-            return False
-        ip_str = values['ip']
-        paths = values['paths']
-        for path in paths:
-            parent_path = concat_ip_path(ip_str, path)
-            for file_name in list_dir(ip_str, path):
-                if not file_name.startswith('BL'):
+    def __do_fetch(self, ip_str):
+        dirs = ['IT_VMP_SHA_%d_F', 'IT_VMP_WHU_%d_F', 'IT_VMP_SIA_%d_F', 'IT_VMP_PEK_%d_F', 'T_VMP_WHU_%d_F']
+        for dir in dirs:
+            for num in range(1000):
+                path = dir % num
+                parent_path = concat_ip_path(ip_str, path)
+                dir_lists = list_dir(ip_str, path)
+                if len(dir_lists) == 0:
                     continue
-                item_json = self.__parse_item(parent_path, file_name)
-                DB.redis.rpush(self.key_fetched, item_json)
+                self.logger.info('Fetching path: %s ...' % parent_path)
+                for file_name in dir_lists:
+                    if not file_name.startswith('BL'):
+                        continue
+                    item_json = self.__parse_item(parent_path, file_name)
+                    self.logger.info('Find EMUI version: %s' % file_name)
+                    DB.redis.rpush(self.key_fetched, item_json)
 
     def do(self):
         is_sleep = False
         while True:
-            value = DB.redis.lpop(self.key_unfetch)
-            if value is None:
+            ip_str = DB.redis.lpop(self.key_unfetch)
+            if ip_str is None:
                 if not is_sleep:
                     self.logger.debug('Task queue is empty. waiting ...')
                 is_sleep = True
                 time.sleep(1)
-
             else:
-                value = bytes_2_str(value)
-                self.logger.info('Feaching path %s' % value)
-                values = json.loads(value)
-                self.__do_fetch(values)
+                ip_str = bytes_2_str(ip_str)
+                self.logger.info('Fetching ip: %s ...' % ip_str)
+                self.__do_fetch(ip_str)
                 is_sleep = False
 
 

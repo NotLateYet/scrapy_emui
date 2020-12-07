@@ -29,12 +29,12 @@ def get_rand_name():
 
 
 def ping_ip(ip_str):
-    return subprocess.call(['ping', PING_COUNT_PARAM, '2', PING_WAIT_PARAM, '100', ip_str]) == 0
+    return subprocess.call(['ping', PING_COUNT_PARAM, '2', PING_WAIT_PARAM, '10', ip_str]) == 0
 
 
 def next_ip(ip_str):
     nip = str_2_ip(ip_str)
-    index = 3
+    index = 2
     while index >= 0 and nip[index] == 255:
         nip[index] = 1
         index -= 1
