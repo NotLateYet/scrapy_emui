@@ -5,8 +5,10 @@ import subprocess
 import time
 import platform
 
-PING_COUNT_PARAM = '-n' if platform.system() == 'Windows' else '-c'
-PING_WAIT_PARAM = '-w' if platform.system() == 'Windwos' else '-W'
+WINDOWS_SYSTEM = platform.system() == 'Windows'
+
+PING_COUNT_PARAM = '-n' if WINDOWS_SYSTEM else '-c'
+PING_WAIT_PARAM = '-w' if WINDOWS_SYSTEM else '-W'
 ENCODING_FORMAT = 'UTF-8'
 
 
