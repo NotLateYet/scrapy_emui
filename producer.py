@@ -1,16 +1,14 @@
-import logging
 import json
 from abc import ABC, abstractmethod
 from database import *
 from utils import *
-
-logging.basicConfig(level=logging.DEBUG)
+from logger import *
 
 
 class BaseProducer(ABC):
     def __init__(self):
         self.__name = get_rand_name()
-        self.logger = logging.getLogger(__name__)
+        self.logger = Logger('producer.log', level='debug')
         self.key_unfetch = 'unfetch'
         self.key_unreach = 'unreach'
         self.logger.info('Create a producer(%s).' % self.__name)
@@ -29,39 +27,43 @@ class IpProducer(BaseProducer, ABC):
     def __init__(self):
         super(IpProducer, self).__init__()
         self.__key_last = 'last_ip'
+        self.__start_ip_str = '127.0.0.1'
 
     def __loop_ip(self):
         while True:
-            ip = DB.redis.hget(self.__key_last, 'ip')
-            if ip is not None:
-                ip = list(ip)
+            ip_str = DB.redis.hget(self.__key_last, 'ip')
+            if ip_str is None:
+                ip_str = self.__start_ip_str
             else:
-                ip = [127, 0, 0, 1]
-            nip = next_ip(ip)
-            if nip is None:
+                ip_str = bytes_2_str(ip_str)
+            nip_str = next_ip(ip_str)
+            if nip_str is None:
                 return False
-            DB.redis.hset(self.__key_last, 'ip', bytes(nip))
-            if not ping_ip(ip):
+            DB.redis.hset(self.__key_last, 'ip', str_2_bytes(nip_str))
+            self.logger.info('Processing ip: %s' % ip_str)
+            if not ping_ip(ip_str):
                 continue
-            self.__loop_dir(ip)
+            self.__loop_dir(ip_str)
 
-    def __loop_dir(self, ip):
+    def __loop_dir(self, ip_str):
         dirs = ['IT_VMP_SHA_%03d_F']
         reach = []
         unreach = []
         for dir in dirs:
             for i in range(1000):
                 d = dir % i
-                if len(list_dir(ip, d)) > 0:
+                if len(list_dir(ip_str, d)) > 0:
                     reach.append(d)
                 else:
                     unreach.append(d)
-        reach_json = json.dumps({'ip': ip, 'paths': reach})
-        unreach_json = json.dumps({'ip': ip, 'paths': unreach})
-        DB.redis.rpush(self.key_unreach, unreach_json)
-        DB.redis.rpush(self.key_unfetch, reach_json)
-        self.logger.debug('Process item: key=%s, value=%s' % (self.key_unreach, unreach_json))
-        self.logger.debug('Process item: key=%s, value=%s' % (self.key_unfetch, reach_json))
+        if len(reach) > 0:
+            reach_json = json.dumps({'ip': ip_str, 'paths': reach})
+            DB.redis.rpush(self.key_unfetch, str_2_bytes(reach_json))
+            self.logger.debug('Process [%s] items: %s' % (self.key_unfetch, reach_json))
+        if len(unreach) > 0:
+            unreach_json = json.dumps({'ip': ip_str, 'paths': unreach})
+            DB.redis.rpush(self.key_unreach, str_2_bytes(unreach_json))
+            self.logger.debug('Process [%s] items: %s' % (self.key_unreach, unreach_json))
 
     def do(self):
         self.__loop_ip()

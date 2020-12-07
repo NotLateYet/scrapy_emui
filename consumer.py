@@ -1,20 +1,18 @@
-import logging
 import json
 import time
 from abc import ABC, abstractmethod
 from database import *
 from utils import *
-
-logging.basicConfig(level=logging.DEBUG)
+from logger import *
 
 
 class BaseConsumer(ABC):
     def __init__(self):
         self.__name = get_rand_name()
-        self.logger = logging.getLogger(__name__)
+        self.logger = Logger('consumer.log', level='debug')
         self.key_unfetch = 'unfetch'
         self.key_fetched = 'fetched'
-        self.logger.info('Create a consume(%s).' % self.__name)
+        self.logger.info('Create a consumer(%s).' % self.__name)
 
     def start(self):
         self.logger.info('Start consume items ...')
@@ -53,26 +51,32 @@ class IpConsumer(BaseConsumer, ABC):
         if 'ip' not in values or 'paths' not in values:
             self.logger.error('Not found ip or paths in %s' % json.dumps(values))
             return False
-        ip = values['ip']
+        ip_str = values['ip']
         paths = values['paths']
         for path in paths:
-            parent_path = concat_ip_path(ip, path)
-            for file_name in list_dir(ip, path):
+            parent_path = concat_ip_path(ip_str, path)
+            for file_name in list_dir(ip_str, path):
                 if not file_name.startswith('BL'):
                     continue
                 item_json = self.__parse_item(parent_path, file_name)
                 DB.redis.rpush(self.key_fetched, item_json)
 
     def do(self):
+        is_sleep = False
         while True:
             value = DB.redis.lpop(self.key_unfetch)
             if value is None:
+                if not is_sleep:
+                    self.logger.debug('Task queue is empty. waiting ...')
+                is_sleep = True
                 time.sleep(1)
-                logging.info('Task queue is empty. waiting ...')
+
             else:
-                logging.info('Feaching path %s' % value)
+                value = bytes_2_str(value)
+                self.logger.info('Feaching path %s' % value)
                 values = json.loads(value)
                 self.__do_fetch(values)
+                is_sleep = False
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ import time
 import platform
 
 PING_COUNT_PARAM = '-n' if platform.system() == 'Windows' else '-c'
+ENCODING_FORMAT = 'UTF-8'
 
 
 def get_hostname():
@@ -24,12 +25,12 @@ def get_rand_name():
     return get_ip() + "_" + get_uuid()[:6]
 
 
-def ping_ip(ip):
-    return subprocess.call(['ping', PING_COUNT_PARAM, '2', '.'.join([str(i) for i in ip])]) == 0
+def ping_ip(ip_str):
+    return subprocess.call(['ping', PING_COUNT_PARAM, '2', ip_str]) == 0
 
 
-def next_ip(ip):
-    nip = ip.copy()
+def next_ip(ip_str):
+    nip = str_2_ip(ip_str)
     index = 3
     while index >= 0 and nip[index] == 255:
         nip[index] = 1
@@ -37,17 +38,16 @@ def next_ip(ip):
     if index == -1:
         return None
     nip[index] += 1
-    return nip
+    return ip_2_str(nip)
 
 
-def concat_ip_path(ip, path):
-    ip_str = '.'.join([str(i) for i in ip])
+def concat_ip_path(ip_str, path):
     return '//' + ip_str + '/' + path
 
 
-def list_dir(ip, path):
+def list_dir(ip_str, path):
     try:
-        return os.listdir(concat_ip_path(ip, path))
+        return os.listdir(concat_ip_path(ip_str, path))
     except OSError:
         return []
 
@@ -60,3 +60,19 @@ def timestamp_2_time(timestamp):
 def file_create_time(filepath):
     t = os.path.getmtime(filepath)
     return timestamp_2_time(t)
+
+
+def ip_2_str(ip):
+    return '.'.join([str(i) for i in ip])
+
+
+def str_2_ip(ip_str):
+    return [int(i) for i in ip_str.split('.')]
+
+
+def str_2_bytes(s):
+    return str(s).encode(encoding=ENCODING_FORMAT)
+
+
+def bytes_2_str(b):
+    return bytes(b).decode(encoding=ENCODING_FORMAT)
