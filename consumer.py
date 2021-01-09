@@ -14,6 +14,8 @@ class ResultDAO(object):
 
     @staticmethod
     def save_db(items):
+        if items is None or len(items) == 0:
+            return
         collection = DB.mongo[MongDBName.DB][MongDBName.COLLECTION]
         for item in items:
             collection.update_one({'key': item['key']}, {'$set': item}, upsert=True)
@@ -48,6 +50,8 @@ class IpConsumer(object):
         # TODO Step1 mount
         mount_path = ''
         items = []
+        if len(mount_path) == 0:
+            return
         for file_name in os.listdir(mount_path):
             if not file_name.startswith('BL'):
                 continue
