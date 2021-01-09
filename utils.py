@@ -4,6 +4,7 @@ import os
 import subprocess
 import time
 import platform
+import re
 
 WINDOWS_SYSTEM = platform.system() == 'Windows'
 
@@ -63,6 +64,12 @@ def timestamp_2_time(timestamp):
 def file_create_time(filepath):
     t = os.path.getmtime(filepath)
     return timestamp_2_time(t)
+
+
+def is_ip(ip_str):
+    return True
+    # p = re.compile("^((?:(2[0-4]\d)|(25[0-5])|([01]?\d\d?))\.){3}(?:(2[0-4]\d)|(255[0-5])|([01]?\d\d?))$")
+    # return re.match(p, ip_str)
 
 
 def ip_2_str(ip):
