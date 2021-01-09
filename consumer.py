@@ -1,6 +1,6 @@
 import json
-import time
-from database import *
+from config import RedisKey, MongDBName
+from database import DB, UnFetchDAO
 from utils import *
 from logger import *
 from hashlib import md5
@@ -11,6 +11,12 @@ class ResultDAO(object):
     def put_item(item_json):
         md5_val = md5(str_2_bytes(item_json)).hexdigest()
         return DB.redis.sadd(RedisKey.RESULT_SET, md5_val) == 1
+
+    @staticmethod
+    def save_db(items):
+        collection = DB.mongo[MongDBName.DB][MongDBName.COLLECTION]
+        for item in items:
+            collection.update_one({'key': item['key']}, {'$set': item}, upsert=True)
 
 
 class IpConsumer(object):
@@ -36,40 +42,27 @@ class IpConsumer(object):
             'emui': emui_ver,
             'path': parent_path,
         }
-        return json.dumps(res)
+        return res
 
     def __fetch(self, ip_str):
         # TODO Step1 mount
-
-        # TODO Step2 list dir
-
-        # TODO Step3 parst each dir
-
-        return []
-        # dirs = ['IT_VMP_SHA_%d_F', 'IT_VMP_WHU_%d_F', 'IT_VMP_SIA_%d_F', 'IT_VMP_PEK_%d_F', 'T_VMP_WHU_%d_F']
-        # for dir in dirs:
-        #     for num in range(1, 1000):
-        #         path = dir % num
-        #         parent_path = concat_ip_path(ip_str, path)
-        #         dir_lists = list_dir(ip_str, path)
-        #         if len(dir_lists) == 0:
-        #             continue
-        #         self.logger.info('Fetching path: %s ...' % parent_path)
-        #         for file_name in dir_lists:
-        #             if not file_name.startswith('BL'):
-        #                 continue
-        #             item_json = self.__parse_item(parent_path, file_name)
-        #             self.logger.info('Find EMUI version: %s' % file_name)
-        #             DB.redis.rpush(self.key_fetched, item_json)
+        mount_path = ''
+        items = []
+        for file_name in os.listdir(mount_path):
+            if not file_name.startswith('BL'):
+                continue
+            item = self.__parse_item(mount_path, file_name)
+            self.logger.info('Find EMUI version: %s' % file_name)
+            items.append(item)
+        return items
 
     def do(self):
         while True:
             ip_str = UnFetchDAO.get_host()
             self.logger.info('Fetching ip: %s ...' % ip_str)
-            item_json = self.__fetch(ip_str)
-            # if ResultDAO.put_item(item_json):
-            # TODO update to MongoDB
+            items = self.__fetch(ip_str)
             self.logger.info('Update to MongoDB: ')
+            ResultDAO.save_db(items)
 
 
 if __name__ == '__main__':

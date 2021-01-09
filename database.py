@@ -10,7 +10,7 @@ class DB(object):
 
     redis = __REDIS.client
     redis_lock = __REDIS.lock
-    mongo = __MONGO
+    mongo = __MONGO.client
 
 
 class UnFetchDAO(object):
