@@ -3,6 +3,7 @@ from utils import *
 from logger import *
 from config import *
 from nmap import nmap
+from ipaddress import ip_address
 
 
 class UnScanDAO(object):
@@ -25,7 +26,7 @@ class UnScanDAO(object):
         result = pipe.execute()
         if result is None:
             return None
-        return [str(ip, encoding='utf8') for ip in result[0]]
+        return [bytes_2_str(ip) for ip in result[0]]
 
     @staticmethod
     def put_range(start, end, length):
@@ -40,7 +41,7 @@ class UnScanDAO(object):
         ip3_range_list = [str(ip_str).lstrip('0.') for ip_str in range_strs]
         pipe = DB.redis.pipeline()
         for ip3_str in ip3_range_list:
-            pipe.rpush(RedisKey.UNSCAN_IP, bytes(ip3_str, encoding='utf8'))
+            pipe.rpush(RedisKey.UNSCAN_IP, str_2_bytes(ip3_str))
         pipe.execute()
 
 

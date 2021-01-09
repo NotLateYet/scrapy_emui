@@ -29,4 +29,6 @@ if __name__ == '__main__':
     import json
 
     redisDB.client.hset('a3', 'ips', json.dumps({'ip': [127, 0, 0, 1]}))
+    res = redisDB.client.sadd('s1', 5)
+    print(res)
     redisDB.client.flushall()

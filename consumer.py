@@ -1,34 +1,23 @@
 import json
 import time
-from abc import ABCMeta, abstractmethod
 from database import *
 from utils import *
 from logger import *
+from hashlib import md5
 
 
-class BaseConsumer(object):
-    __metaclass__ = ABCMeta
+class ResultDAO(object):
+    @staticmethod
+    def put_item(item_json):
+        md5_val = md5(str_2_bytes(item_json)).hexdigest()
+        return DB.redis.sadd(RedisKey.RESULT_SET, md5_val) == 1
 
+
+class IpConsumer(object):
     def __init__(self):
         self.__name = get_rand_name()
         self.logger = Logger('log/consumer_%s.log' % self.__name, level='debug')
-        self.key_unfetch = 'unfetch'
-        self.key_fetched = 'fetched'
         self.logger.info('Create a consumer(%s).' % self.__name)
-
-    def start(self):
-        self.logger.info('Start consume items ...')
-        self.do()
-        self.logger.info('Consume items end.')
-
-    @abstractmethod
-    def do(self):
-        pass
-
-
-class IpConsumer(BaseConsumer):
-    def __init__(self):
-        super(IpConsumer, self).__init__()
 
     def __parse_item(self, parent_path, file_name):
         full_path = os.path.join(parent_path, file_name)
@@ -49,39 +38,40 @@ class IpConsumer(BaseConsumer):
         }
         return json.dumps(res)
 
-    def __do_fetch(self, ip_str):
-        dirs = ['IT_VMP_SHA_%d_F', 'IT_VMP_WHU_%d_F', 'IT_VMP_SIA_%d_F', 'IT_VMP_PEK_%d_F', 'T_VMP_WHU_%d_F']
-        for dir in dirs:
-            for num in range(1, 1000):
-                path = dir % num
-                parent_path = concat_ip_path(ip_str, path)
-                dir_lists = list_dir(ip_str, path)
-                if len(dir_lists) == 0:
-                    continue
-                self.logger.info('Fetching path: %s ...' % parent_path)
-                for file_name in dir_lists:
-                    if not file_name.startswith('BL'):
-                        continue
-                    item_json = self.__parse_item(parent_path, file_name)
-                    self.logger.info('Find EMUI version: %s' % file_name)
-                    DB.redis.rpush(self.key_fetched, item_json)
+    def __fetch(self, ip_str):
+        # TODO Step1 mount
+
+        # TODO Step2 list dir
+
+        # TODO Step3 parst each dir
+
+        return []
+        # dirs = ['IT_VMP_SHA_%d_F', 'IT_VMP_WHU_%d_F', 'IT_VMP_SIA_%d_F', 'IT_VMP_PEK_%d_F', 'T_VMP_WHU_%d_F']
+        # for dir in dirs:
+        #     for num in range(1, 1000):
+        #         path = dir % num
+        #         parent_path = concat_ip_path(ip_str, path)
+        #         dir_lists = list_dir(ip_str, path)
+        #         if len(dir_lists) == 0:
+        #             continue
+        #         self.logger.info('Fetching path: %s ...' % parent_path)
+        #         for file_name in dir_lists:
+        #             if not file_name.startswith('BL'):
+        #                 continue
+        #             item_json = self.__parse_item(parent_path, file_name)
+        #             self.logger.info('Find EMUI version: %s' % file_name)
+        #             DB.redis.rpush(self.key_fetched, item_json)
 
     def do(self):
-        is_sleep = False
         while True:
-            ip_str = DB.redis.lpop(self.key_unfetch)
-            if ip_str is None:
-                if not is_sleep:
-                    self.logger.debug('Task queue is empty. waiting ...')
-                is_sleep = True
-                time.sleep(1)
-            else:
-                ip_str = bytes_2_str(ip_str)
-                self.logger.info('Fetching ip: %s ...' % ip_str)
-                self.__do_fetch(ip_str)
-                is_sleep = False
+            ip_str = UnFetchDAO.get_host()
+            self.logger.info('Fetching ip: %s ...' % ip_str)
+            item_json = self.__fetch(ip_str)
+            # if ResultDAO.put_item(item_json):
+            # TODO update to MongoDB
+            self.logger.info('Update to MongoDB: ')
 
 
 if __name__ == '__main__':
-    ipp = IpConsumer()
-    ipp.start()
+    ipc = IpConsumer()
+    ipc.do()
