@@ -55,6 +55,7 @@ class IpProducer(object):
         self.logger.info('Create a producer(%s)' % self.__name)
 
     def __scan_ip_subnet__(self, ip3):
+        self.logger.info('Scanning host(%s.1-255) ... ' % ip3)
         subnet = '{0}.1-255'.format(ip3)
         args = '-sn -PS -T5 --min-parallelism {0}'.format(ScanConfig.CONCURRENT)
         self.__nmap.scan(subnet, arguments=args)
@@ -83,6 +84,7 @@ class IpProducer(object):
             for ip in ip_batches:
                 alive_hosts = self.__scan_ip_subnet__(ip)
                 if len(alive_hosts) > 0:
+                    self.logger.info('Find activate hosts: %s' % alive_hosts)
                     UnFetchDAO.put_hosts(alive_hosts)
 
 
