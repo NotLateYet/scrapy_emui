@@ -58,7 +58,13 @@ class ResultDAO(object):
         """
         collection = DB.mongo[MongDBName.DB][MongDBName.COLLECTION]
         indexes = collection.index_information()
-        return 'key_1' in indexes.keys() and 'unique' in indexes['key_1'] and indexes['key_1']['unique']
+        if 'key_1' in indexes.keys() and 'unique' in indexes['key_1'] and indexes['key_1']['unique']:
+            return True
+        else:
+            message = 'Please add unique key index for {0}.{1} with: use {0}; db.{1}.'.format(MongDBName.DB,
+                                                                                              MongDBName.COLLECTION)
+            print(message + 'createIndex({"key": 1}, {"unique": true})')
+            return False
 
     @staticmethod
     def save_db(items):
