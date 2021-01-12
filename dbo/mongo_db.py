@@ -1,19 +1,37 @@
+# -*- coding: UTF-8 -*-
 import pymongo
-from config import MongoDBConfig
 
 
 class MongoDB(object):
-    def __init__(self):
-        nodes = ','.join(MongoDBConfig.NODES)
-        self.__client = pymongo.MongoClient("mongodb://{0}/".format(nodes))
+    """
+    MongoDB数据库连接池统一入口，支持MongoDB集群
+    """
+
+    def __init__(self, nodes):
+        self.__nodes = nodes
+        nodes_str = ','.join(nodes)
+        self.__client = pymongo.MongoClient("mongodb://{0}/".format(nodes_str))
 
     @property
     def client(self):
+        """
+        从MongoDB连接池中获取客户端实例
+        :return: MongoDB客户端实例
+        """
         return self.__client
+
+    @property
+    def nodes(self):
+        """
+        获取MongoDB节点信息
+        :return: MongoDB节点信息
+        """
+        return self.__nodes
 
 
 if __name__ == '__main__':
-    client = MongoDB().client
+    NODES = ['127.0.0.1:27017', ]
+    client = MongoDB(NODES).client
     print(client.list_database_names())
     db = client['NotLate']
     print(db.list_collection_names())

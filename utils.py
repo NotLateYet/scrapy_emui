@@ -1,15 +1,6 @@
 import socket
 import uuid
-import os
-import subprocess
-import time
-import platform
-import re
 
-WINDOWS_SYSTEM = platform.system() == 'Windows'
-
-PING_COUNT_PARAM = '-n' if WINDOWS_SYSTEM else '-c'
-PING_WAIT_PARAM = '-w' if WINDOWS_SYSTEM else '-W'
 ENCODING_FORMAT = 'UTF-8'
 
 
@@ -27,43 +18,6 @@ def get_uuid():
 
 def get_rand_name():
     return get_ip() + "_" + get_uuid()[:6]
-
-
-def ping_ip(ip_str):
-    return subprocess.call(['ping', PING_COUNT_PARAM, '2', PING_WAIT_PARAM, '10', ip_str]) == 0
-
-
-def next_ip(ip_str):
-    nip = str_2_ip(ip_str)
-    index = 2
-    while index >= 0 and nip[index] == 255:
-        nip[index] = 1
-        index -= 1
-    if index == -1:
-        return None
-    nip[index] += 1
-    return ip_2_str(nip)
-
-
-def concat_ip_path(ip_str, path):
-    return '//' + ip_str + '/' + path
-
-
-def list_dir(ip_str, path):
-    try:
-        return os.listdir(concat_ip_path(ip_str, path))
-    except OSError:
-        return []
-
-
-def timestamp_2_time(timestamp):
-    time_struct = time.localtime(timestamp)
-    return time.strftime('%Y-%m-%d %H:%M:%S', time_struct)
-
-
-def file_create_time(filepath):
-    t = os.path.getmtime(filepath)
-    return timestamp_2_time(t)
 
 
 def is_ip(ip_str):

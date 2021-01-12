@@ -1,51 +1,18 @@
-from database import *
+# -*- coding: UTF-8 -*-
+from nmap import nmap
+from database import UnScanDAO, DB, UnFetchDAO
 from utils import *
 from logger import *
 from config import *
-from nmap import nmap
-from ipaddress import ip_address
-
-
-class UnScanDAO(object):
-    @staticmethod
-    def ip_range(start_str, end_str, length):
-        start_int = int(ip_address(start_str).packed.hex(), 16)
-        end_int = int(ip_address(end_str).packed.hex(), 16)
-        range_end_int = min(end_int, start_int + length)
-        return [ip_address(ip).exploded for ip in range(start_int, range_end_int)]
-
-    @staticmethod
-    def emtpy():
-        return DB.redis.llen(RedisKey.UNSCAN_IP) == 0
-
-    @staticmethod
-    def get_range(length):
-        pipe = DB.redis.pipeline()
-        pipe.lrange(RedisKey.UNSCAN_IP, 0, length - 1)
-        pipe.ltrim(RedisKey.UNSCAN_IP, length, -1)
-        result = pipe.execute()
-        if result is None:
-            return None
-        return [bytes_2_str(ip) for ip in result[0]]
-
-    @staticmethod
-    def put_range(start, end, length):
-        start_str = '0.' + ip_2_str(start[:3])
-        end_str = '0.' + ip_2_str(end[:3])
-        if start_str == end_str:
-            range_strs = [start_str]
-        else:
-            range_strs = UnScanDAO.ip_range(start_str, end_str, length)
-        if len(range_strs) == 0:
-            return
-        ip3_range_list = [str(ip_str).lstrip('0.') for ip_str in range_strs]
-        pipe = DB.redis.pipeline()
-        for ip3_str in ip3_range_list:
-            pipe.rpush(RedisKey.UNSCAN_IP, str_2_bytes(ip3_str))
-        pipe.execute()
 
 
 class IpProducer(object):
+    """
+    生产者类，主要两个用途：
+    1. 若Redis中未扫描IP地址为空，则根据指定的起止地址生成IP列表(前三段)，并push到Redis
+    2. 若Redis中未扫描IP地址不为空，则获取IP地址并扫描(遍历第四段时，每次从1-255)，然后把扫描到的可连通的IP地址push到Redis
+    """
+
     def __init__(self):
         self.__name = get_rand_name()
         self.__begin = []
@@ -55,6 +22,11 @@ class IpProducer(object):
         self.logger.info('Create a producer(%s)' % self.__name)
 
     def __scan_ip_subnet__(self, ip3):
+        """
+        扫描IP段，第四段从1-255遍历
+        :param ip3: 包含前三段的未扫描IP地址
+        :return: 可连通的IP地址
+        """
         self.logger.info('Scanning host(%s.1-255) ... ' % ip3)
         subnet = '{0}.1-255'.format(ip3)
         args = '-sn -PS -T5 --min-parallelism {0}'.format(ScanConfig.CONCURRENT)
@@ -62,6 +34,11 @@ class IpProducer(object):
         return self.__nmap.all_hosts()
 
     def do(self, begin, end):
+        """
+        生产者功能入口
+        :param begin: 用户输入开始IP地址
+        :param end: 用户输入结束IP地址
+        """
         if not is_ip(begin) or not is_ip(end):
             self.logger.error('begin(%s) or end(%s) ip is invalid.' % (begin, end))
             return
@@ -90,4 +67,4 @@ class IpProducer(object):
 
 if __name__ == '__main__':
     ipp = IpProducer()
-    ipp.do('192.168.43.1', '192.168.43.255')
+    ipp.do('10.0.0.1', '10.255.255.255')

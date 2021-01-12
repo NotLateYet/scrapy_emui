@@ -3,3 +3,4 @@
 *.pyc
 consumer*.log
 producer*.log
+/test/
