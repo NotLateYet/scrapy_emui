@@ -30,8 +30,11 @@ class SmbTool(object):
         :param cmd: shell 命令
         :return: shell命令返回的str格式结果
         """
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-        result = process.communicate()[0]
+        try:
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            result = process.communicate()[0]
+        except Exception:
+            result = None
         if result is None:
             return []
         if type(result) is bytes:
@@ -136,12 +139,15 @@ class SmbTool(object):
             full_path = os.path.join(tmp_path, dir)
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
                 continue
-            dir_info = {
-                'file_name': dir,
-                'create_time': SmbTool.file_create_time(full_path),
-                'modify_time': SmbTool.file_modify_time(full_path),
-            }
-            dir_infos.append(dir_info)
+            try:
+                dir_info = {
+                    'file_name': dir,
+                    'create_time': SmbTool.file_create_time(full_path),
+                    'modify_time': SmbTool.file_modify_time(full_path),
+                }
+                dir_infos.append(dir_info)
+            except FileNotFoundError:
+                continue
 
         self.unmount_dir(tmp_path)
         return dir_infos
